@@ -1,0 +1,9 @@
+主要功能：
+            App版本更新，
+            替换Apk，
+            Service下载，通知栏
+涉及到的辅助功能：
+                    MVP架构
+                    Okhttp3 文件下载
+                    FileProvider来实现文件共享。
+                            android 随着版本迭代的速度越来越快，有一些api已经被遗弃了甚至不存在了。7.0 的文件权限变得尤为严格，所以之前的一些代码在高一点的系统可能导致崩溃，比如下面的，如果不做版本判断，在7.0的手机就会抛出FileUriExposedException异常，说app不能访问你的app以外的资源。官方文档建议的做法，是用FileProvider来实现文件共享。

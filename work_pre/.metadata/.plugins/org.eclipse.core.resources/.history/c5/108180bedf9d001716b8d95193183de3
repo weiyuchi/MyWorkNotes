@@ -1,0 +1,61 @@
+package com.taihe.yth.customserver.allchat.bean;
+
+public class MultAllUserState {
+	
+	//有效的
+	public static final int EFFECTIVE = 0;
+	//无效的
+	public static final int INVALID = 1;
+	
+	private String id = "";
+	//是否自己静音  0没有 1已禁止
+	private int audio = EFFECTIVE;
+	//是否自己禁止视频  0没有 1已禁止
+	private int video = EFFECTIVE;
+	//是否被房主静音  0没有 1已禁止
+	private int allowAudio = EFFECTIVE;
+	
+	
+	
+	
+	public String getId() {
+		return id;
+	}
+	public void setId(String id) {
+		this.id = id;
+	}
+	public boolean enableAudio() {
+		return audio == 0 ? true : false;
+	}
+	public void setAudio(int audio) {
+		this.audio = audio;
+	}
+	public boolean enableVideo() {
+		return video == 0 ? true : false;
+	}
+	public void setVideo(int video) {
+		this.video = video;
+	}
+	public boolean enableAllowAudio() {
+		return allowAudio == 0 ? true : false;
+	}
+	public void setAllowAudio(int allowAudio) {
+		this.allowAudio = allowAudio;
+	}
+	public int getAudio() {
+		return audio;
+	}
+	public int getVideo() {
+		return video;
+	}
+	public int getAllowAudio() {
+		return allowAudio;
+	}
+	
+	public String getSendMessage(){
+		return id + "_" + audio + "_" + video + "_" + allowAudio;
+	}
+	
+	
+	
+}

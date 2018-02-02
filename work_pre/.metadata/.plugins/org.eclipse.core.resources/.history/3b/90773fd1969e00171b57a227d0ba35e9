@@ -1,0 +1,109 @@
+package com.example.taiheiimsdk;
+
+import com.example.taiheiimsdk.SocketService.PushDataListener;
+import com.example.taiheiimsdk.SocketService.PushService;
+import com.example.taiheiimsdk.SocketService.SendMessageResult;
+import com.example.taiheiimsdk.SocketService.SocketConn;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.Toast;
+
+public class MainActivity extends Activity {
+	
+	private Button btn_1;
+	//   /storage/emulated/0/SYLT_IM/image/1505456743417.jpg1,/storage/emulated/0/SYLT_IM/20170815013120756.jpg
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		btn_1 = (Button) findViewById(R.id.btn_1);
+		
+		PushService.mID = "523";
+		PushService.mToken="943fdfe0321c49fe9bac719c77c2c7c3";
+		PushService.mURL = "http://yth.api.114wbn.com/";
+		PushService.mCompanyId = "47";
+		PushService.PORT = 8991;
+		PushService.HOST ="124.95.132.209";
+		PushService.addPushDataListener(pushDataListener);
+		Intent serviceIntent = new Intent(MainActivity.this, PushService.class);
+		startService(serviceIntent);
+		
+		
+		
+		
+		
+		btn_1.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(MainActivity.this,VideoConcatenon.class);
+				startActivitie(intent);
+				
+//				new Thread(new Runnable() {
+//					@Override
+//					public void run() {
+//						SendMessageResult stemp = new SendMessageResult();
+//						/**
+//						 * 发送1对1消息
+//						 */
+////						发送普通消息
+////						stemp = PushService.sendMessage(SocketConn.MSG_SEND_TEXT,"523", "508", "测试001", "");
+//						//发送图片
+////						stemp = PushService.sendMessage(SocketConn.MSG_SEND_IMAGE, "523", "508", "/storage/emulated/0/SYLT_IM/20170815013120756.jpg");
+//						//发送语音
+////						stemp = PushService.sendMessage(SocketConn.MSG_SEND_VOICE, "523","508", "/storage/emulated/0/YTH_IM/voice/1505717036480.amr","3");
+//						//发送小视频z
+////						stemp = PushService.sendMessage(SocketConn.MSG_SEND_VIDEO, "523","508", "/storage/emulated/0/YTH_IM/video/recording1505786823835.mp4", "");
+//						//发送文件
+////						stemp = PushService.sendMessage(SocketConn.MSG_SEND_FILE, "523","508", "/storage/emulated/0/360Download/Log.txt", "692B");
+//						//发送位置
+////						stemp = PushService.sendMessage(SocketConn.MSG_SEND_LOCATION, "523","508", "/storage/emulated/0/YTH_IM/image/1505798856004.jpg1", "41.81283908191272,123.483985891602,大东区小东路248-12号,");
+//						
+//						
+//						
+//					/**
+//					 * 发送群消息	
+//					 */
+//						
+////						发送普通消息
+////						stemp = PushService.sendGroupMessage(SocketConn.MSG_SEND_TEXT,"523", "15", "呵呵呵", "","509,508");
+//						//发送图片
+////						stemp = PushService.sendGroupMessage(SocketConn.MSG_SEND_IMAGE,"523", "15","/storage/emulated/0/YTH_IM/image/1505803507961.jpg1", "", "508,509");
+//						//发送语音
+////						stemp = PushService.sendGroupMessage(SocketConn.MSG_SEND_VOICE,"523", "15","/storage/emulated/0/YTH_IM/voice/1505717036480.amr", "3", "508,509");
+//						//发送小视频
+////						stemp = PushService.sendGroupMessage(SocketConn.MSG_SEND_VIDEO,"523", "15","/storage/emulated/0/YTH_IM/video/recording1505786823835.mp4", "", "508,509");
+//						//发送文件
+////						stemp = PushService.sendGroupMessage(SocketConn.MSG_SEND_FILE,"523", "15","/storage/emulated/0/360Download/Log.txt", "692B", "508,509");
+//						//发送位置
+////						stemp = PushService.sendGroupMessage(SocketConn.MSG_SEND_LOCATION,"523", "15","/storage/emulated/0/YTH_IM/image/1505798856004.jpg1", "41.81283908191272,123.483985891602,大东区小东路248-12号,", "508,509");
+//						
+////						final SendMessageResult sendMessageResult = stemp;
+////						runOnUiThread(new Runnable() {
+////							public void run() {
+////								if (sendMessageResult.isSuccess()) {
+////									Toast.makeText(MainActivity.this, "成功", Toast.LENGTH_SHORT).show();
+////								} else {
+////									Toast.makeText(MainActivity.this, "失败", Toast.LENGTH_SHORT).show();
+////								}
+////							}
+////						});
+//					}
+//				}).start();
+			}
+		});
+	}
+	
+	private PushDataListener pushDataListener = new PushDataListener() {
+		
+		@Override
+		public void pushData(String content) {
+			Log.i("www", content);
+		}
+	};
+}

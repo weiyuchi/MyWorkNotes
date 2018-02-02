@@ -1,0 +1,617 @@
+package com.example.taiheiimsdk;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.webrtc.DataChannel;
+import org.webrtc.DataChannel.Buffer;
+import org.webrtc.EglBase;
+import org.webrtc.IceCandidate;
+import org.webrtc.MediaStream;
+import org.webrtc.PeerConnection.IceConnectionState;
+import org.webrtc.RendererCommon.ScalingType;
+import org.webrtc.SessionDescription;
+import org.webrtc.SurfaceViewRenderer;
+
+import com.example.taiheiimsdk.SocketService.PushDataListener;
+import com.example.taiheiimsdk.SocketService.PushService;
+import com.example.taiheiimsdk.SocketService.SocketConn;
+import com.example.taiheiimsdk.demo.dean.MultAllUserState;
+
+import android.app.Activity;
+import android.content.Context;
+import android.graphics.PixelFormat;
+import android.os.Build.VERSION;
+import android.os.Bundle;
+import android.os.Handler;
+import android.text.TextUtils;
+import android.util.Log;
+import android.widget.LinearLayout;
+import fi.vtt.nubomedia.kurentoroomclientandroid.KurentoRoomAPI;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomError;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomListener;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomNotification;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomResponse;
+import fi.vtt.nubomedia.utilitiesandroid.LooperExecutor;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMMediaConfiguration;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMPeerConnection;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMWebRTCPeer;
+
+/**
+ *视频聊天
+ */
+public class VideoConcatenon  extends Activity implements RoomListener,NBMWebRTCPeer.Observer {
+	private Context context;
+	/* 需要用户提供的 数据*/
+	
+	private String myId="508";//自己的ID
+	private String Guid="b7ea082a36f54f01b3981dab03bc9550";//视频交流唯一标识
+	private String membersIDs=",523,509,508";//参与视频交流人员的ID
+	private boolean isSendVideo = true;//是否是视频发起者
+	
+	
+	private LinearLayout layout;
+	private SurfaceViewRenderer  myRenserer;
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		// TODO Auto-generated method stub
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		layout = (LinearLayout) findViewById(R.id.linerlayout_main);
+		myRenserer = (SurfaceViewRenderer) findViewById(R.id.my_renderer);
+		myRenserer.init(rootEglBase.getEglBaseContext(), null);
+		myRenserer.setScalingType(ScalingType.SCALE_ASPECT_FILL);
+		myRenserer.setZOrderOnTop(true);
+		myRenserer.setZOrderMediaOverlay(true);
+		
+		
+		
+//		if (VERSION.SDK_INT < 23) {
+//			showToastOnActivity("您的系统版本暂不支持此功能");
+//			getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+//			finish();
+//			return;
+//		}
+		PushService.addPushDataListener(pushDataListener);
+		rootEglBase = EglBase.create();
+		new Thread(new Runnable() {
+			public void run() {
+				try {
+					PushService.sendVideoMultChatMessage(SocketConn.MSG_SEND_ALL_VIDEO_MULT_CHAT,
+							myId, "", "", "", membersIDs, Guid, isSendVideo);//唯一码
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		}).start();
+		
+		
+		try {
+			initRoom();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/*
+	 * ---------------------------视频交流开始SDK----------------------------------------
+	 */
+	private LooperExecutor executor;
+	private static KurentoRoomAPI kurentoRoomAPI;
+	private int roomId = 10010;// 任意数
+	public static Map<String, Boolean> userPublishList = new HashMap<>();
+
+	private Map<Integer, String> videoRequestUserMapping;
+	private int publishVideoRequestId;
+	private NBMWebRTCPeer nbmWebRTCPeer;
+	private Handler mHandler = null;
+	private CallState callState;
+
+	private enum CallState {
+		IDLE, PUBLISHING, PUBLISHED, WAITING_REMOTE_USER, RECEIVING_REMOTE_USER
+	}
+	
+	String wsUri = "https://room.syccy.com:8443/room";
+	/**
+	 * 初始化视频聊天房间
+	 */
+	private void initRoom() {
+		videoRequestUserMapping = new HashMap<Integer, String>();
+		
+		executor = new LooperExecutor();
+		executor.requestStart();
+		
+		kurentoRoomAPI = new KurentoRoomAPI(executor, wsUri, this);
+		// Load test certificate from assets
+		CertificateFactory cf;
+		try {
+			cf = CertificateFactory.getInstance("X.509");
+			InputStream caInput = new BufferedInputStream(context.getAssets().open("client.cer"));
+			Certificate ca = cf.generateCertificate(caInput);
+			kurentoRoomAPI.addTrustedCertificate("ca", ca);
+		} catch (CertificateException | IOException e) {
+			e.printStackTrace();
+		}
+		kurentoRoomAPI.useSelfSignedCertificate(true);
+
+		if (!kurentoRoomAPI.isWebSocketConnected()) {
+			kurentoRoomAPI.connectWebSocket();
+		}
+	}
+	
+	private void joinRoom() {
+		if (kurentoRoomAPI.isWebSocketConnected()) {
+			kurentoRoomAPI.sendJoinRoom(myId, Guid, true, roomId);
+		}
+	}
+	/*
+	 * ---------------------------视频交流结束(SDK)----------------------------------------
+	 */
+	
+	
+	
+	/*---------------------------视频交流（Demo）开始----------------------------------------*/
+	
+	// 会议中人员的状态信息
+	private List<MultAllUserState> multAllUserStates = new ArrayList<MultAllUserState>();
+	private boolean isFinished = false;
+	private EglBase rootEglBase;
+	
+	/**
+	 *	添加成员信息 
+	 */
+	private synchronized void addUserState(final String userid, final int audio, final int video,
+			final int allowAudio) {
+		((Activity)context).runOnUiThread(new Runnable() {
+			public void run() {
+				try {
+					MultAllUserState stemp = getUserState(userid);
+					if (stemp == null)																																																																																																																																																																			 {
+						MultAllUserState multAllUserState = new MultAllUserState();
+						multAllUserState.setId(userid);
+						multAllUserState.setAudio(audio);
+						multAllUserState.setVideo(video);
+						if (TextUtils.equals(userid, myId)) {
+							multAllUserState.setAllowAudio(allowAudio);
+						}
+						multAllUserStates.add(multAllUserState);
+					} else {
+						stemp.setAudio(audio);
+						stemp.setVideo(video);
+						if (TextUtils.equals(userid, myId)) {
+							stemp.setAllowAudio(allowAudio);
+						}
+					}
+//					showUserState(); 
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+	
+	
+	
+	private MultAllUserState getUserState(String userid) {
+		MultAllUserState userState = null;
+		try {
+			for (int i = 0; i < multAllUserStates.size(); i++) {
+				MultAllUserState stemp = multAllUserStates.get(i);
+				if (TextUtils.equals(userid, stemp.getId())) {
+					userState = stemp;
+					break;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return userState;
+	}
+	/**
+	 * 有人退出房间时调用
+	 */
+	public void remove(final String ta) {
+		((Activity)context).runOnUiThread(new Runnable() {
+			public void run() {
+				try {
+//					removeUserStateByID(ta);   移除会议中人员的状态信息
+//					removeMemberByID(ta);
+//					if (members.size() == 1 && timerEnd) {//如果只有最后一个人
+						new Thread(new Runnable() {
+							public void run() {
+								PushService.sendVideoMultChatMessage(SocketConn.MSG_CLOSE_ALL_VIDEO_MULT_CHAT,
+										myId, "", "", "", "加入视频的所有人", Guid, isSendVideo);
+							}
+						}).start();
+//						onFinishActivity();  关闭页面
+//					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+	
+	
+	/**
+	 *  有人加入房间时调用
+	 *  
+	 *  	创建 视频播放器
+	 */
+	synchronized private void addmembers(final String id) {
+		try {
+			if (TextUtils.isEmpty(id)) {
+				return;
+			}
+			String[] ids = id.split(",");
+			for (int i = 0; i < ids.length; i++) {
+//				if (!isContainMember(ids[i])) { 判断此人是否已经在房间
+//					final LoginUser loginUser = PushService.getLoginUserByID(ids[i]);  
+//					if (loginUser != null) {
+				((Activity)context).runOnUiThread(new Runnable() {
+							public void run() {
+								try {
+//									if (!isContainMember(loginUser.getID())) {
+//										members.add(loginUser);  如果此人不在房间中，则把他加入房间成员列表
+//									}
+//									if (!callvackMaps.containsKey(loginUser.getID())) {    如果播放器列表中没有该用户的信息
+									SurfaceViewRenderer myRenderer_2 = new SurfaceViewRenderer(context);
+									myRenderer_2.init(rootEglBase.getEglBaseContext(), null);
+									myRenderer_2.setScalingType(ScalingType.SCALE_ASPECT_FILL);
+									myRenderer_2.setZOrderOnTop(true);
+									myRenderer_2.setZOrderMediaOverlay(true);
+									LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+									myRenderer_2.setLayoutParams(layoutParams);
+									layout.addView(myRenderer_2);
+									
+									
+//										myRenderer_2.setOnClickListener(new OnClickListener() {
+//											@Override
+//											public void onClick(View v) {
+//												MYSurfaceViewRenderer myV = (MYSurfaceViewRenderer) v;
+//												if (!myV.getType()) {// 该视频播放器被屏蔽
+//													if (backgroung_TV.getVisibility() == View.GONE) {
+//														backgroung_TV.setVisibility(View.VISIBLE);
+//													}
+//												} else {
+//													showBigView(loginUser.getID(), myBitrenderer);
+//												}
+// 
+//												showName.setText(loginUser.getNickName());
+//												sign_show_people = loginUser.getID() + "";
+//											}
+//										});
+//										videoView.addView(myRenderer_2);
+//										callvackMaps.put(loginUser.getID(), myRenderer_2);
+//									}
+
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
+						});
+
+//					}
+//				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	private Runnable offerWhenReady = new Runnable() {
+		@Override
+		public void run() {
+			// Generate offers to receive video from all peers in the room
+			for (Map.Entry<String, Boolean> entry : userPublishList.entrySet()) {
+				if (entry.getValue()) {
+					GenerateOfferForRemote(entry.getKey());
+					// Set value to false so that if this function is called
+					// again we won't
+					// generate another offer for this user
+					entry.setValue(false);
+				}
+			}
+		}
+	};
+	
+	private void GenerateOfferForRemote(String remote_name) {
+		try {
+			nbmWebRTCPeer.generateOffer(remote_name, false);
+			callState = CallState.WAITING_REMOTE_USER;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void initWebRTC() {
+		kurentoRoomAPI.addObserver(this);
+		NBMMediaConfiguration peerConnectionParameters = new NBMMediaConfiguration(
+				NBMMediaConfiguration.NBMRendererType.OPENGLES, NBMMediaConfiguration.NBMAudioCodec.OPUS, 0,
+				NBMMediaConfiguration.NBMVideoCodec.VP8, 0,
+				new NBMMediaConfiguration.NBMVideoFormat(640, 480, PixelFormat.RGB_888, 15),
+				NBMMediaConfiguration.NBMCameraPosition.FRONT);
+
+		nbmWebRTCPeer = new NBMWebRTCPeer(peerConnectionParameters, this, myRenserer, this);
+		nbmWebRTCPeer.initialize();
+		callState = CallState.PUBLISHING;
+
+	}
+	
+	private void endCall() {
+		callState = CallState.IDLE;
+		try {
+			if (nbmWebRTCPeer != null) {
+				nbmWebRTCPeer.selectCameraPosition(NBMCameraPosition.FRONT);
+				nbmWebRTCPeer.close();
+				nbmWebRTCPeer = null;
+			}
+			if (kurentoRoomAPI.isWebSocketConnected()) {
+				kurentoRoomAPI.sendLeaveRoom(roomId);
+				kurentoRoomAPI.disconnectWebSocket();
+			}
+			executor.requestStop();
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+	}
+	
+
+	private void onFinishActivity() {
+		runOnUiThread(new Runnable() {
+			public void run() {
+				try {
+					isFinished = true;
+					getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+					unregisterReceiver(headSetBroadcastReceiver);
+					PushService.removePushDataListener(pushDataListener);
+					onGuanBi();
+					finish();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+	/*---------------------------视频交流（Demo）结束----------------------------------------*/
+	
+	
+	
+	
+	
+	
+//++=====================================================================================================================================	
+
+	@Override
+	public void onBufferedAmountChange(long arg0, NBMPeerConnection arg1, DataChannel arg2) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onDataChannel(DataChannel arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onIceCandidate(IceCandidate iceCandidate, NBMPeerConnection nbmPeerConnection) {
+		int sendIceCandidateRequestId = publishVideoRequestId + 1;
+		if (callState == CallState.PUBLISHING || callState == CallState.PUBLISHED) {
+			kurentoRoomAPI.sendOnIceCandidate(myId, iceCandidate.sdp,
+					iceCandidate.sdpMid, Integer.toString(iceCandidate.sdpMLineIndex), sendIceCandidateRequestId);
+		} else {
+			kurentoRoomAPI.sendOnIceCandidate(nbmPeerConnection.getConnectionId(), iceCandidate.sdp,
+					iceCandidate.sdpMid, Integer.toString(iceCandidate.sdpMLineIndex), sendIceCandidateRequestId);
+		}
+		
+	}
+	@Override
+	public void onIceStatusChanged(IceConnectionState arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onInitialize() {
+		if (isFinished) {
+			endCall();
+		}else {
+			nbmWebRTCPeer.generateOffer(AccountManager.getLoginUser().getID(), true);
+		}
+		
+	}
+	@Override
+	public void onLocalSdpAnswerGenerated(SessionDescription arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onLocalSdpOfferGenerated(SessionDescription arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onMessage(Buffer arg0, NBMPeerConnection arg1, DataChannel arg2) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onPeerConnectionError(String arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRemoteStreamAdded(MediaStream arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRemoteStreamRemoved(MediaStream arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onStateChange(NBMPeerConnection arg0, DataChannel arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRoomConnected() {
+		if (kurentoRoomAPI.isWebSocketConnected()) {
+			joinRoom();
+		}
+	}
+	@Override
+	public void onRoomDisconnected() {
+		
+	}
+	/**
+	 * 异捕获常
+	 */
+	@Override
+	public void onRoomError(RoomError arg0) {
+		Log.w("uuu", arg0.toString());		
+	}
+	/**
+	 * 更新房间信息（有人加入或退出）
+	 */
+	@Override
+	public void onRoomNotification(RoomNotification notification) {
+		try {
+			Map<String, Object> map = notification.getParams();
+			// Somebody wrote a message to other users in the room
+			// 接收消息
+			if (notification.getMethod().equals(RoomListener.METHOD_SEND_MESSAGE)) {
+				String user = map.get("user").toString();
+				if (!TextUtils.equals(user, myId)) {
+					String message = map.get("message").toString();
+					Log.w("uuu", "roomMessage=" + message);
+					String[] users = message.split(",");
+					if (users.length > 0) {
+						for (int i = 0; i < users.length; i++) {
+							String content = users[i];
+							String[] states = content.split("_");
+							if (states.length > 0) {
+								String userid = states[0];
+								int audio = Integer.parseInt(states[1]);
+								int video = Integer.parseInt(states[2]);
+								int allowAudio = Integer.parseInt(states[3]);
+								addUserState(userid, audio, video, allowAudio);
+							}
+						}
+					}
+				}
+			}
+			// Somebody left the room
+			// 有人离开房间
+			else if (notification.getMethod().equals(RoomListener.METHOD_PARTICIPANT_LEFT)) {
+				final String user = map.get("name").toString();
+				remove(user);
+				// showToastOnActivity(user + "离开了房间");
+			}
+			// Somebody joined the room
+			// 有人加入房间
+			else if (notification.getMethod().equals(RoomListener.METHOD_PARTICIPANT_JOINED)) {
+				final String user = map.get("id").toString();
+				addmembers(user);
+//				noticeAllUserState();    更改UI
+			}
+			// Somebody in the room published their video
+			// 有人开始视频推送
+			else if (notification.getMethod().equals(RoomListener.METHOD_PARTICIPANT_PUBLISHED)) {
+				final String user = map.get("id").toString();
+				userPublishList.put(user, true);
+				addmembers(user);
+				mHandler.postDelayed(offerWhenReady, 4000);
+			} else if (notification.getMethod().equals(RoomListener.METHOD_ICE_CANDIDATE)) {
+				String sdpMid = map.get("sdpMid").toString();
+				int sdpMLineIndex = Integer.valueOf(map.get("sdpMLineIndex").toString());
+				String sdp = map.get("candidate").toString();
+				IceCandidate ic = new IceCandidate(sdpMid, sdpMLineIndex, sdp);
+
+				if (callState == CallState.PUBLISHING || callState == CallState.PUBLISHED) {
+					nbmWebRTCPeer.addRemoteIceCandidate(ic, myId);
+				} else {
+					nbmWebRTCPeer.addRemoteIceCandidate(ic, notification.getParam("endpointName").toString());
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	
+		
+	}
+	@Override
+	public void onRoomResponse(RoomResponse response) {
+		// joinRoom response
+		try {
+			if (response.getMethod() == KurentoRoomAPI.Method.JOIN_ROOM) {
+				userPublishList = new HashMap<>(response.getUsers());
+				String id = "";
+				for (Map.Entry<String, Boolean> entry : userPublishList.entrySet()) {
+					id += "," + entry.getKey();
+				}
+				id = id.replaceFirst(",", "");
+				addmembers(id);
+			}
+			int requestId = response.getId();
+			if (response.getId() == roomId) {
+				// 连接房间成功
+				runOnUiThread(new Runnable() {
+					public void run() {
+						initWebRTC();
+					}
+				});
+			}
+			if (requestId == publishVideoRequestId || videoRequestUserMapping.containsKey(requestId)) {
+				SessionDescription sd = new SessionDescription(SessionDescription.Type.ANSWER,
+						response.getValue("sdpAnswer").get(0));
+				// Check if we are waiting for publication of our own vide
+				if (callState == CallState.PUBLISHING) {
+					callState = CallState.PUBLISHED;
+					nbmWebRTCPeer.processAnswer(sd, myId);
+					mHandler.postDelayed(offerWhenReady, 4000);
+					// Check if we are waiting for the video publication of the
+					// other peer
+				} else if (callState == CallState.WAITING_REMOTE_USER) {
+					// String user_name =
+					// Integer.toString(publishVideoRequestId);
+					// callState = CallState.RECEIVING_REMOTE_USER;
+					String connectionId = videoRequestUserMapping.get(requestId);
+					nbmWebRTCPeer.processAnswer(sd, connectionId);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	
+	//推送监听
+	String strzf = "";
+	private PushDataListener pushDataListener = new PushDataListener() {
+		@Override
+		public void pushData(String content) {
+			try {
+				
+				content = content.replaceFirst(SocketConn.MSG_BASE_SPLITE, "");
+				String[] msgs = content.split(SocketConn.MSG_BASE_SPLITE);
+				
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	};
+	
+}

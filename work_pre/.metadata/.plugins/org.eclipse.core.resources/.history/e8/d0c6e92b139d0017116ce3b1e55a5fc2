@@ -1,0 +1,50 @@
+package com.example.taiheiimsdk;
+
+import com.example.taiheiimsdk.SocketService.PushDataListener;
+import com.example.taiheiimsdk.SocketService.PushService;
+import com.example.taiheiimsdk.SocketService.SocketConn;
+
+import android.app.Activity;
+import android.os.Bundle;
+
+import fi.vtt.nubomedia.kurentoroomclientandroid.KurentoRoomAPI;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomError;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomListener;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomNotification;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomResponse;
+import fi.vtt.nubomedia.utilitiesandroid.LooperExecutor;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMMediaConfiguration;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMMediaConfiguration.NBMCameraPosition;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMPeerConnection;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMWebRTCPeer;
+
+/**
+ *视频聊天
+ */
+public class VideoConcatenon extends Activity implements RoomListener,NBMWebRTCPeer.Observer {
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_video);
+		
+		PushService.addPushDataListener(pushDataListener);
+	}
+	
+	
+	String strzf = "";
+	private PushDataListener pushDataListener = new PushDataListener() {
+		@Override
+		public void pushData(String content) {
+			try {
+				
+				content = content.replaceFirst(SocketConn.MSG_BASE_SPLITE, "");
+				String[] msgs = content.split(SocketConn.MSG_BASE_SPLITE);
+				
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	};
+	
+}

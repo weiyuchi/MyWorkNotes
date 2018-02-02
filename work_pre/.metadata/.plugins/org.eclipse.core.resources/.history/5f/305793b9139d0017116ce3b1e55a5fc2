@@ -1,0 +1,144 @@
+package com.example.taiheiimsdk;
+
+import org.webrtc.DataChannel;
+import org.webrtc.DataChannel.Buffer;
+import org.webrtc.IceCandidate;
+import org.webrtc.MediaStream;
+import org.webrtc.PeerConnection.IceConnectionState;
+import org.webrtc.SessionDescription;
+
+import com.example.taiheiimsdk.SocketService.PushDataListener;
+import com.example.taiheiimsdk.SocketService.PushService;
+import com.example.taiheiimsdk.SocketService.SocketConn;
+
+import android.app.Activity;
+import android.os.Build.VERSION;
+import android.os.Bundle;
+
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomError;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomListener;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomNotification;
+import fi.vtt.nubomedia.kurentoroomclientandroid.RoomResponse;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMPeerConnection;
+import fi.vtt.nubomedia.webrtcpeerandroid.NBMWebRTCPeer;
+
+/**
+ *视频聊天
+ */
+public class VideoConcatenon extends Activity implements RoomListener,NBMWebRTCPeer.Observer {
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_video);
+		if (VERSION.SDK_INT < 23) {
+//			showToastOnActivity("您的系统版本暂不支持此功能");
+			getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+			finish();
+			return;
+		}
+		PushService.addPushDataListener(pushDataListener);
+	}
+	
+	
+	String strzf = "";
+	private PushDataListener pushDataListener = new PushDataListener() {
+		@Override
+		public void pushData(String content) {
+			try {
+				
+				content = content.replaceFirst(SocketConn.MSG_BASE_SPLITE, "");
+				String[] msgs = content.split(SocketConn.MSG_BASE_SPLITE);
+				
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	};
+	@Override
+	public void onBufferedAmountChange(long arg0, NBMPeerConnection arg1, DataChannel arg2) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onDataChannel(DataChannel arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onIceCandidate(IceCandidate arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onIceStatusChanged(IceConnectionState arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onInitialize() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onLocalSdpAnswerGenerated(SessionDescription arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onLocalSdpOfferGenerated(SessionDescription arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onMessage(Buffer arg0, NBMPeerConnection arg1, DataChannel arg2) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onPeerConnectionError(String arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRemoteStreamAdded(MediaStream arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRemoteStreamRemoved(MediaStream arg0, NBMPeerConnection arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onStateChange(NBMPeerConnection arg0, DataChannel arg1) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRoomConnected() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRoomDisconnected() {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRoomError(RoomError arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRoomNotification(RoomNotification arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public void onRoomResponse(RoomResponse arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+}
