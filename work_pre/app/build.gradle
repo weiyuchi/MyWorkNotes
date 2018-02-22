@@ -27,4 +27,6 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.8.1'
 
     implementation 'com.yanzhenjie:permission:1.1.2'//动态申请权限
+    implementation 'io.reactivex.rxjava2:rxjava:2.1.0'
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.1'
 }

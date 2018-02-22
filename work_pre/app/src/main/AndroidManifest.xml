@@ -31,8 +31,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".versionsUpdate.VersionsUpdateActivity"/>
-        <service android:name=".versionsUpdate.DownloadService"/>
+        <activity android:name=".function.versionsUpdate.VersionsUpdateActivity"/>
+        <service android:name=".function.versionsUpdate.DownloadService"/>
+        <activity android:name=".view.roll_banner.RollBannerShowActivity"/>
+        <activity android:name=".rx_java.RxjavaPrimary"/>
     </application>
 
 </manifest>

@@ -1,0 +1,9 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+	<com.test.chiapp.view.roll_banner.view.RollPagerView
+	    android:id="@+id/my_banner"
+	    android:layout_width="match_parent"
+	    android:layout_height="180dp"/>
+</RelativeLayout>
