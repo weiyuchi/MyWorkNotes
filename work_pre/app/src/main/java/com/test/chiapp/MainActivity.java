@@ -1,5 +1,6 @@
 package com.test.chiapp;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -8,7 +9,7 @@ import android.widget.TextView;
 
 import com.test.chiapp.view.roll_banner.RollBannerShowActivity;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     private TextView textView;
 

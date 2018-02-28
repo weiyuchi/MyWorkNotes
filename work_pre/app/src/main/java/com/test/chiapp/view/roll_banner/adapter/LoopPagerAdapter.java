@@ -28,10 +28,10 @@ public class LoopPagerAdapter extends PagerAdapter{
 
     private ArrayList<TagImageView> mViewList = new ArrayList<TagImageView>();
     
-    private List<String> pathList = new ArrayList<String>();
-    private int[] pathList_loc = null;
+    public List<String> pathList = new ArrayList<String>();
+    public int[] pathList_loc = null;
     
-    private boolean isNet = false;
+    public boolean isNet = false;
     /**
      * 判断图片是否是网络图片
      */
@@ -72,7 +72,11 @@ public class LoopPagerAdapter extends PagerAdapter{
         if (mViewPager.getViewPager().getCurrentItem() == 0&&getRealCount()>0){
             int half = Integer.MAX_VALUE/2;
             int start = half - half%getRealCount();
-            setCurrent(start);
+            if (getRealCount()==1){//如果轮播图只有一张图片 setCurrent(start); 会数组越位 getCount
+
+            }else {
+                setCurrent(start);
+            }
         }
     }
 
@@ -97,6 +101,9 @@ public class LoopPagerAdapter extends PagerAdapter{
         isNet = true;
         viewPager.setHintViewDelegate(new LoopHintViewDelegate());
     }
+    /**
+     * 加载本地图片
+     */
     public LoopPagerAdapter(RollPagerView viewPager,Context context,int[] pathList){
     	this.pathList_loc = pathList;
         this.mViewPager = viewPager;
@@ -154,7 +161,8 @@ public class LoopPagerAdapter extends PagerAdapter{
     @Deprecated
     @Override
     public final int getCount() {
-        return getRealCount()<=0?getRealCount():Integer.MAX_VALUE;
+//        return getRealCount()<=0?getRealCount():Integer.MAX_VALUE;
+        return getRealCount()<=1?getRealCount():Integer.MAX_VALUE;
     }
 
     public int getRealCount(){
@@ -166,5 +174,5 @@ public class LoopPagerAdapter extends PagerAdapter{
 		}
     	
     	return returnInt;
-    };
+    }
 }

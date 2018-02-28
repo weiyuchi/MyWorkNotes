@@ -35,10 +35,15 @@ import com.test.chiapp.view.roll_banner.hintview.ColorPointHintView;
  */
 public class RollPagerView extends RelativeLayout implements OnPageChangeListener {
 
-	private ViewPager mViewPager;
-	private PagerAdapter mAdapter;
+    /* 下面是控件 */
+    private ViewPager mViewPager;// 轮播图主体 ViewPager
+    private View mHintView;//轮播图下面的指示器
+    /* 下面是工具类 */
+	private PagerAdapter mAdapter;//ViewPager的适配器
+    private GestureDetector mGestureDetector;//手势检查
+    /* 下面是接口（回调） */
 	private HintView.OnItemClickListener mOnItemClickListener;
-    private GestureDetector mGestureDetector;
+
 
 	private long mRecentTouchTime;
 	/**
@@ -88,10 +93,11 @@ public class RollPagerView extends RelativeLayout implements OnPageChangeListene
 	private int paddingTop;
 	private int paddingRight;
 	private int paddingBottom = Util.dip2px(getContext(),4);
+	private int pathListSize = 0;//传入Adapter 图片地址的数量
 	public void setPaddingBottom(int paddingBottom) {
 		this.paddingBottom = Util.dip2px(getContext(),paddingBottom);
 	}
-	private View mHintView;
+
 	private Timer timer;
 
 	public interface HintViewDelegate{
@@ -192,7 +198,7 @@ public class RollPagerView extends RelativeLayout implements OnPageChangeListene
     }
     private TimeTaskHandler mHandler = new TimeTaskHandler(this);
 
-    private static class WeakTimerTask extends TimerTask{
+    private class WeakTimerTask extends TimerTask{
         private WeakReference<RollPagerView> mRollPagerViewWeakReference;
 
         public WeakTimerTask(RollPagerView mRollPagerView) {
@@ -204,7 +210,7 @@ public class RollPagerView extends RelativeLayout implements OnPageChangeListene
             RollPagerView rollPagerView = mRollPagerViewWeakReference.get();
             if (rollPagerView!=null){
                 if(rollPagerView.isShown() && System.currentTimeMillis()-rollPagerView.mRecentTouchTime>rollPagerView.delay){
-                    rollPagerView.mHandler.sendEmptyMessage(0);
+                        rollPagerView.mHandler.sendEmptyMessage(0);
                 }
             }else{
                 cancel();
@@ -217,15 +223,22 @@ public class RollPagerView extends RelativeLayout implements OnPageChangeListene
 	 * 仅当view正在显示 且 触摸等待时间过后 播放
 	 */
 	private void startPlay(){
-		if(delay<=0||mAdapter==null||mAdapter.getCount()<=1){
+		if(delay<=0||mAdapter==null){
 			return;
 		}
 		if (timer!=null){
 			timer.cancel();
 		}
-		timer = new Timer();
-		//用一个timer定时设置当前项为下一项
-		timer.schedule(new WeakTimerTask(this), delay, delay);
+        if (pathListSize>1){
+            timer = new Timer();
+            //用一个timer定时设置当前项为下一项
+            timer.schedule(new WeakTimerTask(this), delay, delay);
+            mHintView.setVisibility(VISIBLE);
+        }else {
+            timer = null;
+            mHintView.setVisibility(GONE);
+        }
+
 	}
 
     private void stopPlay(){
@@ -395,6 +408,14 @@ public class RollPagerView extends RelativeLayout implements OnPageChangeListene
 	 * @param adapter
 	 */
 	public void setAdapter(PagerAdapter adapter){
+		if (adapter instanceof LoopPagerAdapter){
+		    if (((LoopPagerAdapter) adapter).isNet){//记录 需要轮播的图片数量
+                pathListSize = ((LoopPagerAdapter)adapter).pathList.size();
+            }else {
+                pathListSize = ((LoopPagerAdapter)adapter).pathList_loc.length;
+            }
+
+		}
 		adapter.registerDataSetObserver(new JPagerObserver());
 		mViewPager.setAdapter(adapter);
         mViewPager.setOnPageChangeListener(this);

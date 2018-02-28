@@ -5,10 +5,13 @@ import java.util.List;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.test.chiapp.R;
 import com.test.chiapp.view.roll_banner.adapter.LoopPagerAdapter;
+import com.test.chiapp.view.roll_banner.adapter.StaticPagerAdapter;
 import com.test.chiapp.view.roll_banner.hintview.IconHintView;
 import com.test.chiapp.view.roll_banner.inter.HintView;
 import com.test.chiapp.view.roll_banner.view.RollPagerView;
@@ -25,8 +28,8 @@ public class RollBannerShowActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_roll_banner_show);
 		list.add("https://ss3.bdstatic.com/70cFv8Sh_Q1YnxGkpoWK1HF6hhy/it/u=3553020298,1715141379&fm=27&gp=0.jpg");
-		list.add("https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=526348746,357933766&fm=27&gp=0.jpg");
-		list.add("https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=3356121154,1179528716&fm=27&gp=0.jpg");
+//		list.add("https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=526348746,357933766&fm=27&gp=0.jpg");
+//		list.add("https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=3356121154,1179528716&fm=27&gp=0.jpg");
 		rollpagerView = (RollPagerView) findViewById(R.id.my_banner);
 //		rollpagerView.setHintView(new TextHintView(this)); //文字
 //		rollpagerView.setHintView(new ColorPointHintView(this, Color.YELLOW,Color.WHITE));//圆点
